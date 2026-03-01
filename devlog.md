@@ -25,3 +25,22 @@ Coded up the basic structure. Got +, *, /, and numbers working. I messed up the 
 Committing what I have.
 
 ---
+
+## 2025-02-28 7:30 PM
+
+New session. Goals for tonight:
+- Fix - to be unary negation
+- Add $n history lookup
+- Add leftover text check
+
+Thoughts since last time: the history is stored newest-first because I'm using cons. So when I do $n lookup I need to reverse the list first before indexing. That tripped me up.
+
+---
+
+## 2025-02-28 11:00 PM
+
+Fixed the unary minus and added the leftover text check. Added $n too but I have a bug - I'm indexing into the history without reversing it first, so $1 gives the most recent result instead of the first result. Also still forgot to add the divide by zero check. Ugh.
+
+Committing this version anyway to show progress.
+
+---

@@ -10,14 +10,12 @@
       [(string=? (vector-ref args 0) "--batch") #f]
       [else #t])))
 
-;; skip whitespace off the front of a char list
 (define (skip-ws chars)
   (cond
     [(null? chars) '()]
     [(char-whitespace? (car chars)) (skip-ws (cdr chars))]
     [else chars]))
 
-;; read consecutive digits, returns (digits-string . remaining)
 (define (read-digits chars)
   (cond
     [(null? chars) (cons "" '())]
@@ -27,8 +25,6 @@
     [else (cons "" chars)]))
 
 ;; parse one expression, return (value . remaining-chars) or #f on error
-;; BUG: doesnt handle $n history references yet
-;; BUG: - operator broken, treats it like binary subtraction
 (define (parse-expr chars history)
   (let ([chars (skip-ws chars)])
     (cond
@@ -54,7 +50,7 @@
                    #f
                    (cons (* (car r1) (car r2)) (cdr r2))))))]
 
-      ;; binary / -- forgot to check divide by zero lol
+      ;; binary / -- BUG: still not checking divide by zero
       [(char=? (car chars) #\/)
        (let ([r1 (parse-expr (cdr chars) history)])
          (if (not r1)
@@ -64,15 +60,29 @@
                    #f
                    (cons (quotient (car r1) (car r2)) (cdr r2))))))]
 
-      ;; BUG: treating - as binary subtraction, supposed to be unary negate
+      ;; unary - (fixed from last time)
       [(char=? (car chars) #\-)
        (let ([r1 (parse-expr (cdr chars) history)])
          (if (not r1)
              #f
-             (let ([r2 (parse-expr (cdr r1) history)])
-               (if (not r2)
+             (cons (- (car r1)) (cdr r1))))]
+
+      ;; $n history reference
+      ;; BUG: off by one -- using (length history) as max but history is reversed
+      ;; so if history is '(30 10) that means id=1 -> 10 and id=2 -> 30
+      ;; but I'm just doing list-ref without reversing, so it's backwards
+      [(char=? (car chars) #\$)
+       (let ([digits (read-digits (cdr chars))])
+         (if (string=? (car digits) "")
+             #f
+             (let ([id (string->number (car digits))])
+               (if (not id)
                    #f
-                   (cons (- (car r1) (car r2)) (cdr r2))))))]
+                   (if (or (< id 1) (> id (length history)))
+                       #f
+                       ;; BUG: should be (reverse history) before list-ref
+                       ;; this gives values in wrong order
+                       (cons (list-ref history (- id 1)) (cdr digits)))))))]
 
       ;; number
       [(char-numeric? (car chars))
@@ -81,10 +91,14 @@
              #f
              (cons (string->number (car digits)) (cdr digits))))]
 
-      ;; TODO: $n history -- not implemented yet
       [else #f])))
 
-;; BUG: not checking if there are leftover chars after parsing
+(define (all-whitespace? chars)
+  (cond
+    [(null? chars) #t]
+    [(char-whitespace? (car chars)) (all-whitespace? (cdr chars))]
+    [else #f]))
+
 (define (eval-loop history)
   (when interactive? (display "> "))
   (let ([line (read-line)])
@@ -97,10 +111,13 @@
              [(not result)
               (displayln "Error: Invalid Expression")
               (eval-loop history)]
+             ;; now checking for leftover text
+             [(not (all-whitespace? (cdr result)))
+              (displayln "Error: Invalid Expression")
+              (eval-loop history)]
              [else
-              ;; BUG: history id is wrong, using length before cons
-              (let* ([id (+ 1 (length history))]
-                     [new-history (cons (car result) history)])
+              (let* ([new-history (cons (car result) history)]
+                     [id (length new-history)])
                 (display id)
                 (display ": ")
                 (display (real->double-flonum (car result)))
