@@ -44,3 +44,22 @@ Fixed the unary minus and added the leftover text check. Added $n too but I have
 Committing this version anyway to show progress.
 
 ---
+
+## 2025-02-29 7:00 AM
+
+Last session. Goals:
+- Fix $n to reverse history before indexing
+- Add divide by zero check (just return error)
+- Test a bunch of cases
+
+---
+
+## 2025-02-29 4:00 PM
+
+Everything working now. Tested the example from the spec: +*2$1+$2 1 after entering 5 and 3, got the right answer. Tested quit, batch mode with -b flag, divide by zero, invalid expressions, leftover text.
+
+The code is kind of repetitive but it works. 
+
+also made a README.md
+
+Ready to submit.
